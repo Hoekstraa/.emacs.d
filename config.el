@@ -5,6 +5,8 @@
 
 ;;; Code:
 
+(load "~/.emacs.d/setup-splash")
+
 (use-package emacs
   :ensure nil
   :config
@@ -72,8 +74,8 @@
   :ensure nil
   :config
   (add-hook 'org-mode-hook (lambda ()
-							(defvar buffer-face-mode-face '(:family "iA Writer Quattro V"))
-							(buffer-face-mode))))
+							 (defvar buffer-face-mode-face '(:family "iA Writer Quattro V"))
+							 (buffer-face-mode))))
 
 (use-package ido
   :ensure nil
