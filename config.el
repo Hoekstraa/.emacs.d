@@ -20,9 +20,9 @@ This is particularly useful under Mac OS X and macOS, where GUI
 apps are not started from a shell."
   (interactive)
   (let ((path-from-shell (replace-regexp-in-string
-                          "[ \t\n]*$" "" (shell-command-to-string
-                                          "$SHELL --login -c 'echo $PATH'"
-                                          ))))
+        "[ \t\n]*$" "" (shell-command-to-string
+            "$SHELL --login -c 'echo $PATH'"
+            ))))
     (setenv "PATH" path-from-shell)
     (setq exec-path (split-string path-from-shell path-separator))))
 
@@ -45,23 +45,27 @@ apps are not started from a shell."
   (cond
    ((and (find-font (font-spec :name "iA Writer Mono S"))
          (find-font (font-spec :name "iA Writer Quattro S")))
-    (set-face-attribute 'default
+    (set-face-attribute 'fixed-pitch
                         nil
                         :family "iA Writer Mono S"
                         :height 120)
     (set-face-attribute 'mode-line
                         nil
-                        :family "iA Writer Quattro S")
-    (set-face-attribute 'mode-line))
+                        :family "iA Writer Quattro S"))
    ((find-font (font-spec :name "Consolas"))
-    (set-face-attribute 'default
+    (set-face-attribute 'fixed-pitch
                         nil
                         :family "Consolas"
                         :height 120)))
 
+  (set-face-attribute 'default nil :family "iA Writer Mono S" :height 120 :weight 'regular)
+  (set-face-attribute 'fixed-pitch nil :family "iA Writer Mono S" :height 120 :weight 'regular)
+  (set-face-attribute 'variable-pitch nil :family "iA Writer Quattro S" :height 120 :weight 'regular)
+
   ;; Disable UI nonsense.
   (tool-bar-mode 0)
-  (menu-bar-mode 0)
+  (when (not (eq system-type 'darwin))
+    (menu-bar-mode 0))
   (blink-cursor-mode 0)
   (tooltip-mode 0)
   (scroll-bar-mode 0)
@@ -89,6 +93,8 @@ apps are not started from a shell."
    ring-bell-function 'ignore
    ;; Emacs 28 sets this to 1, a little too slow for classic scrollwheels
    mouse-wheel-scroll-amount '(3)
+   ;; Pixel by pixel scrolling
+   pixel-scroll-precision-mode t
    ;; Allow Emacs to scale pixelwise, otherwise it looks a little odd in WMs
    frame-resize-pixelwise t
    ;; On long lines, keep the cursor in the middle of the screen (horizontally)
@@ -183,7 +189,8 @@ apps are not started from a shell."
     (exec-path-from-shell-initialize)))
 
 ;;;;;;;; Folds
-(use-package hs-minor-mode
+;;
+(use-package emacs
   :ensure nil
   :defer nil
   :hook (prog-mode . hs-minor-mode))
@@ -210,7 +217,8 @@ apps are not started from a shell."
   ;;(which-key-setup-minibuffer) ; used previously
   ;;(which-key-setup-side-window-bottom) ; default
   :config
-  (setq which-key-idle-delay 0.5))
+  (setq which-key-idle-delay 0.5)
+  (setq which-key-sort-order 'which-key-prefix-then-key-order-reverse))
 
 (defun follow-cursor-toggle ()
   "Toggles both centered-cursor-mode and pixel-scroll-precision-mode
@@ -237,37 +245,15 @@ Also decreases the amount of horizontal scrolling when following is disabled."
   (general-create-definer evil-leader
     :states '(normal visual motion) ;; insert emacs
     :keymaps 'override
-    :non-normal-prefix "S-SPC"
     :prefix "SPC")
 
-  (general-create-definer emacs-leader
-    :prefix "S-SPC"
-    :keymaps 'override)
 
   (defmacro zgeneral-leader (&rest args)
     "Define for both default leader and global leader."
     (declare (indent defun))
     `(progn
        (evil-leader
-         ,@args)
-       (emacs-leader
          ,@args)))
-
-  ;; Global keybinds
-  ;; (general-define-key
-  ;;  :states '(emacs normal visual motion insert)
-  ;;  :keymaps 'override
-  ;;  :prefix "SPC"
-  ;;  :non-normal-prefix "S-SPC"
-  ;;  "1" 'delete-other-windows
-  ;;  "SPC" 'execute-extended-command
-  ;;  "c" 'comment-or-uncomment-region
-  ;;  "b" '(:ignore t :wk "bookmark")
-  ;;  "bs" 'bookmark-set-no-overwrite
-  ;;  "bj" 'bookmark-jump
-  ;;  "bl" 'bookmark-bmenu-list
-  ;;  "m" '(:ignore t :wk "mouse")
-  ;;  "mm" 'follow-cursor-toggle)
 
   (zgeneral-leader
     "1" 'delete-other-windows
@@ -278,16 +264,8 @@ Also decreases the amount of horizontal scrolling when following is disabled."
     "bj" 'bookmark-jump
     "bl" 'bookmark-bmenu-list
     "m" '(:ignore t :wk "mouse")
-    "mm" 'follow-cursor-toggle)
-
-
-  ;; (general-define-key
-  ;;  :states
-  ;;  "SPC" (general-key "S-SPC" :state 'emacs))
-
-  ;; (general-define-key
-  ;;  :prefix "S-SPC"
-  ;;  "c" 'comment-or-uncomment-region)
+    "mm" 'follow-cursor-toggle
+    "=" 'text-scale-adjust)
 
   (general-define-key
    :states 'normal
@@ -317,9 +295,9 @@ Also decreases the amount of horizontal scrolling when following is disabled."
   :commands (dired-sidebar-toggle-sidebar)
   :init
   (add-hook 'dired-sidebar-mode-hook
-            (lambda ()
-              (unless (file-remote-p default-directory)
-                (auto-revert-mode))))
+      (lambda ()
+        (unless (file-remote-p default-directory)
+    (auto-revert-mode))))
   :config
   (push 'toggle-window-split dired-sidebar-toggle-hidden-commands)
   (push 'rotate-windows dired-sidebar-toggle-hidden-commands)
@@ -345,9 +323,9 @@ Also decreases the amount of horizontal scrolling when following is disabled."
   :demand
   ;; More convenient directory navigation commands
   :bind (:map vertico-map
-              ("RET"   . vertico-directory-enter)
-              ("DEL"   . vertico-directory-delete-char)
-              ("M-DEL" . vertico-directory-delete-word))
+        ("RET"   . vertico-directory-enter)
+        ("DEL"   . vertico-directory-delete-char)
+        ("M-DEL" . vertico-directory-delete-word))
   ;; Tidy shadowed file names
   :hook (rfn-eshadow-update-overlay . vertico-directory-tidy))
 
@@ -394,22 +372,22 @@ Also decreases the amount of horizontal scrolling when following is disabled."
   :ensure nil
   :defer nil
   :config (defun clean-whitespace-in-prog-buffers ()
-            (when (derived-mode-p major-mode)
-              (whitespace-cleanup)))
+      (when (derived-mode-p major-mode)
+        (whitespace-cleanup)))
   :hook (before-save . clean-whitespace-in-prog-buffers))
 
 (use-package company
   :ensure t
   :hook ((prog-mode . company-mode)
-         (ielm . company-mode))
+   (ielm . company-mode))
   :config
   (setq company-minimum-prefix-length 1
-        company-idle-delay 0.1
-        company-selection-wrap-around t
-        company-tooltip-align-annotations t
-        ;; show tooltip even for single candidate
-        company-frontends '(company-pseudo-tooltip-frontend
-                            company-echo-metadata-frontend))
+  company-idle-delay 0.1
+  company-selection-wrap-around t
+  company-tooltip-align-annotations t
+  ;; show tooltip even for single candidate
+  company-frontends '(company-pseudo-tooltip-frontend
+          company-echo-metadata-frontend))
   (define-key company-active-map (kbd "C-n") 'company-select-next)
   (define-key company-active-map (kbd "C-p") 'company-select-previous)
   (define-key company-active-map (kbd "C-d") 'company-show-doc-buffer)
@@ -440,9 +418,12 @@ Also decreases the amount of horizontal scrolling when following is disabled."
 
 (use-package centered-cursor-mode
   :ensure t
-  :hook (prog-mode . centered-cursor-mode)
+  ;; Smooth scrolling is pretty nice, use [space m m] to enable CCM case by case.
+  ;;:hook (prog-mode . centered-cursor-mode)
   :config (setq ccm-recenter-at-end-of-file t
                 ccm-recenter-end-of-file t))
+
+(use-package smart-semicolon-mode)
 
 (use-package rainbow-delimiters
   :ensure t
@@ -454,18 +435,18 @@ Also decreases the amount of horizontal scrolling when following is disabled."
   :config
   (global-set-key "\C-ci" 'aggressive-indent-mode)
   :hook ((prog-mode . aggressive-indent-mode)
-         (slime-repl-mode . aggressive-indent-mode)
-         (scheme-mode . aggressive-indent-mode)
-         (emacs-lisp-mode . aggressive-indent-mode)))
+   (slime-repl-mode . aggressive-indent-mode)
+   (scheme-mode . aggressive-indent-mode)
+   (emacs-lisp-mode . aggressive-indent-mode)))
 
 (use-package eglot
   :ensure nil
   :defer t
   :hook ((eglot-managed-mode . mp-eglot-eldoc)
-         (haskell-mode . eglot-ensure)
-         (clojure-mode . eglot-ensure)
-         (scala-mode . eglot-ensure)
-         (kotlin-mode . eglot-ensure))
+   (haskell-mode . eglot-ensure)
+   (clojure-mode . eglot-ensure)
+   (scala-mode . eglot-ensure)
+   (kotlin-mode . eglot-ensure))
   :bind ("\C-cl" . eglot)
   :custom
   ;; shutdown language server after closing last file
@@ -479,22 +460,22 @@ Also decreases the amount of horizontal scrolling when following is disabled."
    '((haskell
       (plugin
        (stan
-        (globalOn . :json-false)))))))
+  (globalOn . :json-false)))))))
 
 (use-package eldoc
   :ensure nil
   :defer t
   :hook ((emacs-lisp-mode . eldoc-mode)
-         (lisp-interaction-mode . eldoc-mode)
-         (ielm-mode . eldoc-mode))
+   (lisp-interaction-mode . eldoc-mode)
+   (ielm-mode . eldoc-mode))
   :config
   ;; When eldoc buffer is open, don't show it in minibuffer anymore.
   (setq eldoc-echo-area-prefer-doc-buffer t)
   (setq eldoc-documentation-strategy 'eldoc-documentation-compose-eagerly)
 
   (add-to-list 'display-buffer-alist
-               '("^\\*eldoc for" display-buffer-at-bottom
-                 (window-height . 10))))
+         '("^\\*eldoc for" display-buffer-at-bottom
+     (window-height . 10))))
 
 ;;;;;;;; Writing
 
@@ -504,25 +485,25 @@ Also decreases the amount of horizontal scrolling when following is disabled."
   :mode "\\.md\\'"
   :init
   (add-hook 'markdown-mode-hook (lambda ()
-                                  (defvar buffer-face-mode-face
-                                    '(:family "iA Writer Quattro V"))
-                                  (buffer-face-mode)
-                                  (visual-line-mode)))
+          (defvar buffer-face-mode-face
+            '(:family "iA Writer Quattro V"))
+          (buffer-face-mode)
+          (visual-line-mode)))
   :config
   (custom-set-faces
    '(markdown-header-face
      ((t (:inherit font-lock-function-name-face
-                   :weight bold
-                   :family "variable-pitch"))))
+       :weight bold
+       :family "variable-pitch"))))
    '(markdown-header-face-1
      ((t (:inherit markdown-header-face
-                   :height 1.8))))
+       :height 1.8))))
    '(markdown-header-face-2
      ((t (:inherit markdown-header-face
-                   :height 1.4))))
+       :height 1.4))))
    '(markdown-header-face-3
      ((t (:inherit markdown-header-face
-                   :height 1.2)))))
+       :height 1.2)))))
 
   (setq markdown-hide-markup t)
   (setq markdown-header-scaling t)
@@ -533,24 +514,43 @@ Also decreases the amount of horizontal scrolling when following is disabled."
   :ensure nil
   :defer nil
   :config
+  ;;(add-hook 'org-mode-hook 'variable-pitch-mode)
   ;; Use the Quattro font only for org buffers
-  (if (find-font (font-spec :name "iA Writer Quattro V"))
-      (add-hook 'org-mode-hook
-                (lambda ()
-                  (defvar buffer-face-mode-face
-                    '(:family "iA Writer Quattro V"))
-                  (buffer-face-mode)
-                  (visual-line-mode)
-                  (org-indent-mode))))
+  ;; (if (find-font (font-spec :name "iA Writer Quattro V"))
+  ;;     (add-hook 'org-mode-hook
+  ;;               (lambda ()
+  ;;                 (defvar buffer-face-mode-face
+  ;;                   '(:family "iA Writer Quattro V"))
+  ;;                 (buffer-face-mode)
+  ;;                 (visual-line-mode)
+  ;;                 (org-indent-mode))))
+
+  (add-hook 'org-mode-hook
+            '(lambda ()
+               (variable-pitch-mode 1) ;; All fonts with variable pitch.
+               (mapc
+                (lambda (face) ;; Other fonts with fixed-pitch.
+                  (set-face-attribute face nil :inherit 'fixed-pitch))
+                (list 'org-code
+                      ;;'org-link
+                      'org-block
+                      'org-table
+                      'org-block-begin-line
+                      'org-block-end-line
+                      'org-meta-line
+                      'org-document-info-keyword))))
 
   ;; Always be able to open the agenda through it's shortcut
   (global-set-key "\C-ca" 'org-agenda)
   (global-set-key "\C-cl" 'org-store-link)
 
   (zgeneral-leader
-    ;;"c" 'org-capture
-    "a" 'org-agenda
-    "o" 'org-open-at-point-global)
+    "o" 'org-open-at-point-global
+    "j" '(:ignore t :wk "org")
+    "jc" 'org-capture
+    "ja" 'org-agenda
+    "jl" 'org-store-link)
+
 
   (general-define-key
    :states 'normal
@@ -666,7 +666,7 @@ Also decreases the amount of horizontal scrolling when following is disabled."
 ;; TODO: Use-package-ify
 (use-package org-roam
   :ensure t
-  :defer 2
+  :defer nil
   :config
   (ensure-directory-exists "~/org/roam")
   (setq org-roam-directory (file-truename "~/org/roam"))
@@ -702,8 +702,8 @@ Also decreases the amount of horizontal scrolling when following is disabled."
   :after (org-roam)
   :config
   (setq org-roam-ui-sync-theme t
-        org-roam-ui-follow t
-        org-roam-ui-update-on-save t)
+  org-roam-ui-follow t
+  org-roam-ui-update-on-save t)
 
   (zgeneral-leader
     "R" 'org-roam-ui-open))
@@ -714,7 +714,7 @@ Also decreases the amount of horizontal scrolling when following is disabled."
   :diminish evil-org-mode
   :after org
   :hook ((org.mode . evil-org-mode)
-         (evil-org-mode . (lambda () (evil-org-set-key-theme)))))
+   (evil-org-mode . (lambda () (evil-org-set-key-theme)))))
 
 (use-package org-jira
   :ensure t
@@ -724,9 +724,9 @@ Also decreases the amount of horizontal scrolling when following is disabled."
   (setq org-jira-working-dir (ensure-directory-exists "~/.org/jira"))
 
   (setq jiralib-token
-        (cons "Authorization"
-              (concat "Bearer " (auth-source-pick-first-password
-                                 :host "jira.ontwikkel.local")))))
+  (cons "Authorization"
+        (concat "Bearer " (auth-source-pick-first-password
+         :host "jira.ontwikkel.local")))))
 
 ;; TODO: Use-package-ify
 (use-package org-download
@@ -743,8 +743,8 @@ Also decreases the amount of horizontal scrolling when following is disabled."
   :ensure t
   :defer t
   :hook ((emacs-lisp-mode . lispyville-mode)
-         (clojure-mode . lispyville-mode)
-         (scheme-mode . lispyville-mode))
+   (clojure-mode . lispyville-mode)
+   (scheme-mode . lispyville-mode))
   :config
 
   ;; https://github.com/noctuid/lispyville/issues/314
@@ -911,6 +911,11 @@ Also decreases the amount of horizontal scrolling when following is disabled."
 
 (use-package go-mode
   :mode "\\.go\\'")
+
+(use-package ada-ts-mode
+  :mode "\\.adb\\'"
+  :hook (ada-ts-mode . smart-semicolon-mode)
+  )
 
 (provide 'config)
 ;;; config.el ends here
