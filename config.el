@@ -203,6 +203,7 @@ apps are not started from a shell."
   :defer nil
   :hook (ielm-mode . (lambda () (evil-emacs-state 1)))
   :init
+  (global-set-key [remap evil-quit] 'kill-buffer-and-window)
   (setq evil-undo-system 'undo-redo)
   (evil-mode)
   (global-set-key (kbd "<escape>") 'keyboard-escape-quit))
@@ -265,7 +266,9 @@ Also decreases the amount of horizontal scrolling when following is disabled."
     "bl" 'bookmark-bmenu-list
     "m" '(:ignore t :wk "mouse")
     "mm" 'follow-cursor-toggle
-    "=" 'text-scale-adjust)
+    "=" 'text-scale-adjust
+    "i" 'indent-rigidly)
+
 
   (general-define-key
    :states 'normal
