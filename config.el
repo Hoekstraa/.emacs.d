@@ -423,7 +423,7 @@ Also decreases the amount of horizontal scrolling when following is disabled."
   :config (setq ccm-recenter-at-end-of-file t
                 ccm-recenter-end-of-file t))
 
-(use-package smart-semicolon-mode)
+(use-package smart-semicolon)
 
 (use-package rainbow-delimiters
   :ensure t
